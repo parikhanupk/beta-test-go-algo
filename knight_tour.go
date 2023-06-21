@@ -82,7 +82,7 @@ func find_tour(board [][]int, num_rows, num_cols, cur_row, cur_col, num_visited 
             row := cur_row + offset.dr
             col := cur_col + offset.dc
 
-            //skip the where target is off board or already visited
+            //skip where target is off board or already visited
             if row < 0 || row >= num_rows || col < 0 || col >= num_cols || board[row][col] != unvisited {
                 continue
             }
