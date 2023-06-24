@@ -68,6 +68,7 @@ func (hash_table *ChainingHashTable) set(name string, phone string) {
         hash_table.buckets[bi][ei].phone = phone
     } else {
         hash_table.buckets[bi] = append(hash_table.buckets[bi], &Employee { name, phone })
+        hash_table.num_entries += 1
     }
 }
 
@@ -95,6 +96,7 @@ func (hash_table *ChainingHashTable) delete(name string) {
     bi, ei := hash_table.find(name)
     if ei >= 0 {
         hash_table.buckets[bi] = append(hash_table.buckets[bi][:ei], hash_table.buckets[bi][ei + 1:]...)
+        hash_table.num_entries -= 1
     }
 }
 
