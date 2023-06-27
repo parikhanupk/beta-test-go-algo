@@ -10,7 +10,7 @@ func sieve_of_eratosthenes(max int) []bool {
     is_prime := make([]bool, max + 1)
     if max >= 2 {
         is_prime[2] = true
-        for i := 3; i <= max; i++ { is_prime[i] = true }
+        for i := 3; i <= max; i += 2 { is_prime[i] = true }
         for i := 3; i <= int(math.Ceil(math.Sqrt(float64(max)))); i += 2 {
             if is_prime[i] == true {
                 for j := i * i; j <= max; j += i {
