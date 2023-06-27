@@ -37,9 +37,13 @@ func is_probably_prime(p int) bool {
 }
 
 
+//assumes digits will be in the range [1, 15] (64 bit machines)
 func find_prime(digits int) int {
     for {
-        p := rand_range(2, int(math.Pow(float64(10), float64(digits))))
+        digits_max := int(math.Pow(float64(10), float64(digits)))
+        digits_min := digits_max / 10
+        if digits_min == 1 { digits_min = 2 }
+        p := rand_range(digits_min, digits_max)
         p |= 1 //increments p by 1 if p is even
         if is_probably_prime(p) {
             return p
@@ -78,7 +82,6 @@ func test_known_values() {
 }
 
 
-
 func main() {
     rand.Seed(time.Now().UnixNano())
     test_known_values()
@@ -90,7 +93,7 @@ func main() {
         fmt.Scanln(&digits_str)
         if len(digits_str) == 0 { break }
         digits, _ := strconv.Atoi(digits_str)
-        if digits < 0 || digits > 18 { break }
+        if digits < 1 || digits > 15 { break }
         fmt.Println("Prime:", find_prime(digits))
     }
 }
