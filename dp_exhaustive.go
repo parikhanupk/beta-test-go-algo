@@ -12,7 +12,6 @@ const max_value = 10
 const min_weight = 4
 const max_weight = 10
 var allowed_weight int
-var actual_calls = 0
 
 
 type Item struct {
@@ -137,7 +136,6 @@ func run_algorithm(alg func([]Item, int) ([]Item, int, int), items []Item, allow
     print_selected(solution)
     fmt.Printf("Value: %d, Weight: %d, Calls: %d\n",
         total_value, sum_weights(solution, false), function_calls)
-    fmt.Printf("Actual Calls: %d (must be 2^%d - 1)\n", actual_calls, function_calls)
 }
 
 
@@ -150,7 +148,6 @@ func exhaustive_search(items []Item, allowed_weight int) ([]Item, int, int) {
 
 
 func do_exhaustive_search(items []Item, allowed_weight, next_index int) ([]Item, int, int) {
-    actual_calls += 1
     if next_index >= len(items) {
         return copy_items(items), solution_value(items, allowed_weight), 1
     } else {
@@ -159,9 +156,9 @@ func do_exhaustive_search(items []Item, allowed_weight, next_index int) ([]Item,
         items[next_index].is_selected = false
         excluded_solution, excluded_value, excluded_calls := do_exhaustive_search(items, allowed_weight, next_index + 1)
         if included_value >= excluded_value {
-            return included_solution, included_value, included_calls + 1
+            return included_solution, included_value, included_calls + excluded_calls + 1
         } else {
-            return excluded_solution, excluded_value, excluded_calls + 1
+            return excluded_solution, excluded_value, excluded_calls + included_calls + 1
         }
     }
 }
