@@ -6,7 +6,7 @@ import (
     "time")
 
 
-const num_items = 20    // A reasonable value for exhaustive search.
+const num_items = 20
 const min_value = 1
 const max_value = 10
 const min_weight = 4
@@ -30,6 +30,7 @@ func main() {
     fmt.Printf("Total value: %d\n", sum_values(items, true))
     fmt.Printf("Total weight: %d\n", sum_weights(items, true))
     fmt.Printf("Allowed weight: %d\n", allowed_weight)
+    print_items(items, true)
     fmt.Println()
 
     // Exhaustive search
@@ -97,7 +98,7 @@ func sum_weights(items []Item, add_all bool) int {
 func solution_value(items []Item, allowed_weight int) int {
     // If the solution's total weight > allowed_weight,
     // return 0 so we won't use this solution.
-    if sum_weights(items, false) > allowed_weight { return 0 }
+    if sum_weights(items, false) > allowed_weight { return -1 }
 
     // Return the sum of the selected values.
     return sum_values(items, false)
@@ -105,10 +106,10 @@ func solution_value(items []Item, allowed_weight int) int {
 
 
 // Print the selected items.
-func print_selected(items []Item) {
+func print_items(items []Item, all bool) {
     num_printed := 0
     for i, item := range items {
-        if item.is_selected {
+        if all || item.is_selected {
             fmt.Printf("%d(%d, %d) ", i, item.value, item.weight)
         }
         num_printed += 1
@@ -133,7 +134,7 @@ func run_algorithm(alg func([]Item, int) ([]Item, int, int), items []Item, allow
     elapsed := time.Since(start)
 
     fmt.Printf("Elapsed: %f\n", elapsed.Seconds())
-    print_selected(solution)
+    print_items(solution, false)
     fmt.Printf("Value: %d, Weight: %d, Calls: %d\n",
         total_value, sum_weights(solution, false), function_calls)
 }
@@ -148,13 +149,16 @@ func exhaustive_search(items []Item, allowed_weight int) ([]Item, int, int) {
 
 
 func do_exhaustive_search(items []Item, allowed_weight, next_index int) ([]Item, int, int) {
+    //fmt.Println("---", next_index, items)
     if next_index >= len(items) {
         return copy_items(items), solution_value(items, allowed_weight), 1
     } else {
         items[next_index].is_selected = true
         included_solution, included_value, included_calls := do_exhaustive_search(items, allowed_weight, next_index + 1)
+        //fmt.Println("inc---", included_solution, included_value)
         items[next_index].is_selected = false
         excluded_solution, excluded_value, excluded_calls := do_exhaustive_search(items, allowed_weight, next_index + 1)
+        //fmt.Println("exc---", excluded_solution, excluded_value)
         if included_value >= excluded_value {
             return included_solution, included_value, included_calls + excluded_calls + 1
         } else {
