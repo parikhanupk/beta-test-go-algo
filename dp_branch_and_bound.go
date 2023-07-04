@@ -6,7 +6,7 @@ import (
     "time")
 
 
-const num_items = 20
+const num_items = 40
 const min_value = 1
 const max_value = 10
 const min_weight = 4
