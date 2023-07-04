@@ -6,7 +6,7 @@ import (
     "time")
 
 
-const num_items = 20    // A reasonable value for exhaustive search.
+const num_items = 20
 const min_value = 1
 const max_value = 10
 const min_weight = 4
@@ -30,13 +30,23 @@ func main() {
     fmt.Printf("Total value: %d\n", sum_values(items, true))
     fmt.Printf("Total weight: %d\n", sum_weights(items, true))
     fmt.Printf("Allowed weight: %d\n", allowed_weight)
+    print_items(items, true)
     fmt.Println()
 
     // Exhaustive search
-    if num_items > 45 {    // Only run exhaustive search if num_items <= 25.
+    if num_items > 25 {    // Only run exhaustive search if num_items <= 25.
         fmt.Println("Too many items for exhaustive search\n")
     } else {
         fmt.Println("*** Exhaustive Search ***")
+        run_algorithm(exhaustive_search, items, allowed_weight)
+    }
+
+    // Branch and Bound
+    fmt.Println()
+    if num_items > 45 {    // Only run branch and bound search if num_items <= 45.
+        fmt.Println("Too many items for branch and bound search\n")
+    } else {
+        fmt.Println("*** Branch and Bound Search ***")
         run_algorithm(branch_and_bound, items, allowed_weight)
     }
 }
@@ -97,7 +107,7 @@ func sum_weights(items []Item, add_all bool) int {
 func solution_value(items []Item, allowed_weight int) int {
     // If the solution's total weight > allowed_weight,
     // return 0 so we won't use this solution.
-    if sum_weights(items, false) > allowed_weight { return 0 }
+    if sum_weights(items, false) > allowed_weight { return -1 }
 
     // Return the sum of the selected values.
     return sum_values(items, false)
@@ -105,10 +115,10 @@ func solution_value(items []Item, allowed_weight int) int {
 
 
 // Print the selected items.
-func print_selected(items []Item) {
+func print_items(items []Item, all bool) {
     num_printed := 0
     for i, item := range items {
-        if item.is_selected {
+        if all || item.is_selected {
             fmt.Printf("%d(%d, %d) ", i, item.value, item.weight)
         }
         num_printed += 1
@@ -133,9 +143,37 @@ func run_algorithm(alg func([]Item, int) ([]Item, int, int), items []Item, allow
     elapsed := time.Since(start)
 
     fmt.Printf("Elapsed: %f\n", elapsed.Seconds())
-    print_selected(solution)
+    print_items(solution, false)
     fmt.Printf("Value: %d, Weight: %d, Calls: %d\n",
         total_value, sum_weights(solution, false), function_calls)
+}
+
+
+// Recursively assign values in or out of the solution.
+// Return the best assignment, value of that assignment,
+// and the number of function calls we made.
+func exhaustive_search(items []Item, allowed_weight int) ([]Item, int, int) {
+    return do_exhaustive_search(items, allowed_weight, 0)
+}
+
+
+func do_exhaustive_search(items []Item, allowed_weight, next_index int) ([]Item, int, int) {
+    //fmt.Println("---", next_index, items)
+    if next_index >= len(items) {
+        return copy_items(items), solution_value(items, allowed_weight), 1
+    } else {
+        items[next_index].is_selected = true
+        included_solution, included_value, included_calls := do_exhaustive_search(items, allowed_weight, next_index + 1)
+        //fmt.Println("inc---", included_solution, included_value)
+        items[next_index].is_selected = false
+        excluded_solution, excluded_value, excluded_calls := do_exhaustive_search(items, allowed_weight, next_index + 1)
+        //fmt.Println("exc---", excluded_solution, excluded_value)
+        if included_value >= excluded_value {
+            return included_solution, included_value, included_calls + excluded_calls + 1
+        } else {
+            return excluded_solution, excluded_value, excluded_calls + included_calls + 1
+        }
+    }
 }
 
 
@@ -144,41 +182,23 @@ func branch_and_bound(items []Item, allowed_weight int) ([]Item, int, int) {
 }
 
 
-func do_branch_and_bound(items []Item, 
-                        allowed_weight,
-                        best_value,
-                        current_value,
-                        current_weight,
-                        remaining_value,
-                        next_index int) ([]Item, int, int) {
+func do_branch_and_bound(items []Item, allowed_weight, best_value, current_value, current_weight, remaining_value, next_index int) ([]Item, int, int) {
     if next_index >= len(items) {
-        return copy_items(items), solution_value(items, allowed_weight), 1
+        return copy_items(items), current_value, 1
     } else {
         if current_value + remaining_value <= best_value {
-            return nil, 0, 1
+            return nil, current_value, 1
         }
-        items[next_index].is_selected = true
-        if current_weight + items[next_index].weight > allowed_weight {
-            return nil, 0, 1
-        }
-        included_solution, included_value, included_calls := do_branch_and_bound(items,
-                                                                                allowed_weight,
-                                                                                best_value,
-                                                                                current_value + items[next_index].value,
-                                                                                current_weight + items[next_index].weight,
-                                                                                remaining_value - items[next_index].value,
-                                                                                next_index + 1)
-        if included_value > best_value {
-            best_value = included_value
+        included_solution, included_value, included_calls := []Item{}, 0, 1
+        if current_weight + items[next_index].weight <= allowed_weight {
+            items[next_index].is_selected = true
+            included_solution, included_value, included_calls = do_branch_and_bound(items, allowed_weight, best_value, current_value + items[next_index].value, current_weight + items[next_index].weight, remaining_value - items[next_index].value, next_index + 1)
+            if included_value > best_value {
+                best_value = included_value
+            }
         }
         items[next_index].is_selected = false
-        excluded_solution, excluded_value, excluded_calls := do_branch_and_bound(items,
-                                                                                allowed_weight,
-                                                                                best_value,
-                                                                                current_value,
-                                                                                current_weight,
-                                                                                remaining_value - items[next_index].value,
-                                                                                next_index + 1)
+        excluded_solution, excluded_value, excluded_calls := do_branch_and_bound(items, allowed_weight, best_value, current_value, current_weight, remaining_value - items[next_index].value, next_index + 1)
         if included_value >= excluded_value {
             return included_solution, included_value, included_calls + excluded_calls + 1
         } else {
